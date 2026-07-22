@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>EBONG CHA - Admin</title>
+    <style>
+body{
+    font-family: Arial, sans-serif;
+    background:#f5f5f5;
+    margin:20px;
+}
+
+h1{
+    text-align:center;
+    color:#2e7d32;
+}
+
+#orders{
+    max-width:700px;
+    margin:auto;
+}
+
+.order-card{
+    background:white;
+    padding:15px;
+    margin:15px 0;
+    border-radius:12px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.15);
+}
+
+button{
+    padding:10px 18px;
+    margin:5px;
+    border:none;
+    border-radius:8px;
+    font-size:16px;
+    cursor:pointer;
+}
+
+.preparing{
+    background:#ff9800;
+    color:white;
+}
+
+.complete{
+    background:#4caf50;
+    color:white;
+}
+
+.status{
+    font-weight:bold;
+    color:#1976d2;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🍽️ EBONG CHA - Admin Panel</h1>
+
+<h2>📋 Live Orders</h2>
+
+<div id="orders">
+Loading...
+</div>
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+import { getDatabase, ref, onValue,remove,update } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+function completeOrder(orderId){
+
+    remove(ref(database, "orders/" + orderId));
+
+}
+ function preparingOrder(orderId){
+    update(ref(database,"orders/" + orderId), {
+        status:"👩🏻‍🍳 preparing"
+    });
+}
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCf2tT-amndxo9eC6vjFwufy-RKuI1sCE8",
+  authDomain: "ebong-cha.firebaseapp.com",
+  databaseURL: "https://ebong-cha-default-rtdb.firebaseio.com",
+  projectId: "ebong-cha",
+  storageBucket: "ebong-cha.firebasestorage.app",
+  messagingSenderId: "449466575689",
+  appId: "1:449466575689:web:41d81d8c03c04d36970898",
+  measurementId: "G-QR3HXQR4GD"
+};
+
+const app = initializeApp(firebaseConfig);
+const database = getDatabase(app);
+const ordersRef = ref(database, "orders");
+
+const ordersDiv = document.getElementById("orders");
+const orderSound =document.getElementById("orderSound");
+let previousOrderCount =0;
+
+onValue(ordersRef, (snapshot) => {
+
+    let data = snapshot.val();
+    let currentOrderCount=
+    data?
+    Object.keys(data).length:
+    0;
+    if (currentOrderCount> previousOrderCount) {orderSound.play();
+
+    }
+    previousOrderCount=currentOrderCount;
+    if (!data) {
+        ordersDiv.innerHTML=
+        "<h3>No Orders</h3>";
+            previousOrderCount=0;
+            return;
+    }
+
+    let html = "";
+
+    for(let id in data){
+
+  html += `
+<div class="order-card">
+
+<h3>🍽️ Table: ${data[id].table}</h3>
+
+<p><b>Total:</b> ₹${data[id].total}</p>
+
+<p class="status">📌 ${data[id].status}</p>
+
+<button class="preparing" onclick="preparingOrder('${id}')">
+👨‍🍳 Preparing
+</button>
+
+<button class="complete" onclick="completeOrder('${id}')">
+✅ Complete
+</button>
+`;
+
+
+
+
+        for(let i=0; i<data[id].items.length; i++){
+
+            html += `
+            <p>${data[id].items[i].name} - ₹${data[id].items[i].price}</p>
+            `;
+
+        }
+
+    }
+
+    ordersDiv.innerHTML = html;
+
+});
+window.preparingOrder = preparingOrder;
+window.completeOrder=completeOrder;
+
+</script>
+<audio id="orderSound"
+src="notification.mp3"></audio>
+
+</body>
+</html>
